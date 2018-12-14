@@ -98,13 +98,13 @@
 	
 	//文件大小
 	if (size > gb) {
-		return [NSString stringWithFormat:@"%4.2fG", size / (double)gb];
+		return [NSString stringWithFormat:@"%5.2fG", size / (double)gb];
 	}else if (size > mb) {
-		return [NSString stringWithFormat:@"%4.1fM", size / (double)(mb)];
+		return [NSString stringWithFormat:@"%5.1fM", size / (double)(mb)];
 	}else if (size > kb) {
-		return [NSString stringWithFormat:@"%4.lldK", size / kb];
+		return [NSString stringWithFormat:@"%5.lldK", size / kb];
 	}else {
-		return [NSString stringWithFormat:@"%4lldB", size];
+		return [NSString stringWithFormat:@"%5lldB", size];
 	}
 }
 
