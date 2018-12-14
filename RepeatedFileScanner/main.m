@@ -29,20 +29,7 @@ int main(int argc, const char * argv[]) {
 	}
 	
 	@autoreleasepool {
-		MISFileScanner* scanner = [MISFileScanner defaultScanner];
-		[scanner scanFilePath:[NSString stringWithUTF8String:argv[1]] completion:^(NSArray<MISFile *> *repeatedFiles) {
-			printf("Done.\n");
-			if (repeatedFiles.count > 0) {
-				printf("Repeated Files:\n");
-				printf("---------------------------------------------------------------------------------------\n");
-				for (MISFile* file in repeatedFiles) {
-					printf("%s\n", file.path.UTF8String);
-				}
-				printf("---------------------------------------------------------------------------------------\n");
-			}else {
-				printf("No Repeated Files.\n");
-			}
-		}];
+		[MISFileScanner.defaultScanner scanFilePath:[NSString stringWithUTF8String:argv[1]]];
 	}
 	return 0;
 }

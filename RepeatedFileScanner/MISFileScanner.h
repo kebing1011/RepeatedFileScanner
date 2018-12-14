@@ -23,9 +23,7 @@
 + (MISFileScanner *)defaultScanner;
 
 /*扫描文件*/
-- (void)scanFilePath:(NSString *)filePath
-		  completion:(void(^)(NSArray<MISFile *>* repeatedFiles))completion;
-
+- (void)scanFilePath:(NSString *)filePath;
 @end
 
 

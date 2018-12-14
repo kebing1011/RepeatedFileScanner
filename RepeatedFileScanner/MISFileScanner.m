@@ -22,7 +22,6 @@
 
 @interface MISFileScanner()
 @property (nonatomic, copy) NSArray <MISFile *>* repeatedFiles;
-@property (nonatomic, copy) dispatch_queue_t queue;
 @end
 
 @implementation MISFileScanner
@@ -36,19 +35,9 @@
 	return instance;
 }
 
-- (instancetype)init {
-	self = [super init];
-	if (self) {
-		_queue = dispatch_queue_create("file.scanner.queue", DISPATCH_QUEUE_SERIAL);
-	}
-	return self;
-}
-
 
 /*列出文件目录*/
 - (void)listFilesWithFilePath:(NSString* )filePath
-					  toFiles:(NSMutableArray *)files
-				  toFilesInfo:(NSMutableDictionary *)filesInfo
 			   toSizeFileInfo:(NSMutableDictionary *)sizeFilesInfo {
 	NSError* error = nil;
 	NSArray* names = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:filePath error:&error];
@@ -63,7 +52,7 @@
 		if ([[NSFileManager defaultManager] fileExistsAtPath:aFilePath isDirectory:&flag]) {
 			//文件夹，递归
 			if (flag) {
-				[self listFilesWithFilePath:aFilePath toFiles:files toFilesInfo:filesInfo toSizeFileInfo:sizeFilesInfo];
+				[self listFilesWithFilePath:aFilePath toSizeFileInfo:sizeFilesInfo];
 			}else {
 				NSError* error = nil;
 				NSDictionary *fileAttributes = [[NSFileManager defaultManager] attributesOfItemAtPath:aFilePath error:&error];
@@ -71,12 +60,6 @@
 				file.name  = name;
 				file.path  = aFilePath;
 				file.size = [fileAttributes[NSFileSize] longLongValue];
-				
-				//to array
-				[files addObject:file];
-				
-				//to dict
-				filesInfo[aFilePath] = file;
 				
 				NSMutableArray* array = sizeFilesInfo[@(file.size)];
 				if (!array) {
@@ -110,8 +93,7 @@
 
 
 /*扫描文件*/
-- (void)scanFilePath:(NSString *)filePath
-		  completion:(void(^)(NSArray<MISFile *>* repeatedFiles))completion {
+- (void)scanFilePath:(NSString *)filePath {
 	//移除末尾多的"/"
 	while ([filePath hasSuffix:@"/"]) {
 		filePath = [filePath substringToIndex:filePath.length - 1];
@@ -123,24 +105,22 @@
 	}
 	
 	//文档根目录
-	NSMutableArray* files = [NSMutableArray array];
-	NSMutableDictionary* filesInfo = [NSMutableDictionary dictionary];
 	NSMutableDictionary* sizeFilesInfo = [NSMutableDictionary dictionary];
 	
 	//递归成一列
-	printf("Scaning ...\n");
-	[self listFilesWithFilePath:filePath toFiles:files toFilesInfo:filesInfo toSizeFileInfo:sizeFilesInfo];
-	printf("Searching ...\n");
+	printf("Scaning Files...\n");
+	[self listFilesWithFilePath:filePath toSizeFileInfo:sizeFilesInfo];
+	printf("\n");
+	printf("Searching Repeated Files...\n");
 	
 	//find now
-	NSMutableDictionary* md5FilesInfo = NSMutableDictionary.dictionary;
-	NSMutableArray* repeatedFiles = NSMutableArray.array;
 	NSArray* keys = [sizeFilesInfo.allKeys sortedArrayUsingSelector:@selector(compare:)];
-	
+	BOOL hasRepeated = NO;
 	for (NSNumber* key in keys) {
 		NSArray* files = sizeFilesInfo[key];
 		if (files.count > 1) {
 			//相同的文件大小的文件多于1个，可能重复 && 继续校验 hash
+			NSMutableDictionary* md5FilesInfo = NSMutableDictionary.dictionary;
 			for (MISFile* file in files) {
 				NSData* md5 = [self md5With:file];
 				NSMutableArray* array = md5FilesInfo[md5];
@@ -150,21 +130,27 @@
 				}
 				[array addObject:file];
 			}
+			
+			//超过2个的就是重复的
+			for (NSArray* repeatedFiles in md5FilesInfo.allValues) {
+				if (repeatedFiles.count > 1) {
+					hasRepeated = YES;
+					printf("---------------------------------------------------------------------------------------\n");
+					for (MISFile* file in repeatedFiles) {
+						printf("%s\n", file.path.UTF8String);
+					}
+				}
+			}
 		}
 	}
 	
-	keys = md5FilesInfo.allKeys;
-	for (NSNumber* key in keys) {
-		NSArray* files = md5FilesInfo[key];
-		if (files.count > 1) {
-			//重复的
-			[repeatedFiles addObjectsFromArray:files];
-		}
+	if (!hasRepeated) {
+		printf("No Repeated Files.\n");
+	}else {
+		printf("---------------------------------------------------------------------------------------\n");
 	}
 	
-	if (completion) {
-		completion(repeatedFiles.copy);
-	}
+	printf("Done.\n");
 }
 
 
