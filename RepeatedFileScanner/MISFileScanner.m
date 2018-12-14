@@ -21,7 +21,8 @@
 @end
 
 @interface MISFileScanner()
-@property (nonatomic, copy) NSArray <MISFile *>* repeatedFiles;
+@property (nonatomic, assign) BOOL delFlag;
+@property (nonatomic, assign) UInt64 size;
 @end
 
 @implementation MISFileScanner
@@ -56,10 +57,17 @@
 			}else {
 				NSError* error = nil;
 				NSDictionary *fileAttributes = [[NSFileManager defaultManager] attributesOfItemAtPath:aFilePath error:&error];
+				UInt64 size = [fileAttributes[NSFileSize] longLongValue];
+				
+				//limit size fillter
+				if (size < self.size) {
+					continue;
+				}
+				
 				MISFile* file = [[MISFile alloc] init];
 				file.name  = name;
 				file.path  = aFilePath;
-				file.size = [fileAttributes[NSFileSize] longLongValue];
+				file.size = size;
 				
 				NSMutableArray* array = sizeFilesInfo[@(file.size)];
 				if (!array) {
@@ -93,7 +101,9 @@
 
 
 /*扫描文件*/
-- (void)scanFilePath:(NSString *)filePath {
+- (void)scanFilePath:(NSString *)filePath
+				size:(UInt64)size
+			 delFlag:(BOOL)delFlag {
 	//移除末尾多的"/"
 	while ([filePath hasSuffix:@"/"]) {
 		filePath = [filePath substringToIndex:filePath.length - 1];
@@ -103,6 +113,12 @@
 		printf("%s is not exists.\n", filePath.UTF8String);
 		return;
 	}
+	
+	//flag
+	self.delFlag = delFlag;
+	
+	//size
+	self.size = size;
 	
 	//文档根目录
 	NSMutableDictionary* sizeFilesInfo = [NSMutableDictionary dictionary];
@@ -136,8 +152,23 @@
 				if (repeatedFiles.count > 1) {
 					hasRepeated = YES;
 					printf("---------------------------------------------------------------------------------------\n");
-					for (MISFile* file in repeatedFiles) {
-						printf("%s\n", file.path.UTF8String);
+					if (self.delFlag) {
+						MISFile* file = repeatedFiles.firstObject;
+						printf("[+] %s\n", file.path.UTF8String);
+						for (int i = 1; i < repeatedFiles.count; ++i) {
+							file = repeatedFiles[i];
+							NSError* error = nil;
+							if ([NSFileManager.defaultManager removeItemAtPath:file.path error:&error]) {
+								printf("[-] %s\n", file.path.UTF8String);
+							}else {
+								printf("** Delete error: %s **\n", error.localizedDescription.UTF8String);
+							}
+						}
+					}else {
+						for (int i = 0; i < repeatedFiles.count; ++i) {
+							MISFile* file = repeatedFiles[i];
+							printf("[%d] %s\n", (i + 1), file.path.UTF8String);
+						}
 					}
 				}
 			}

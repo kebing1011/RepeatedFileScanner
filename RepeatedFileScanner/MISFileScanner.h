@@ -16,14 +16,13 @@
 
 
 @interface MISFileScanner : NSObject
-@property (nonatomic, copy, readonly) NSArray <MISFile *>* files;
-@property (nonatomic, copy, readonly) NSDictionary<NSString*, MISFile *>* filesInfo;
-
 
 + (MISFileScanner *)defaultScanner;
 
 /*扫描文件*/
-- (void)scanFilePath:(NSString *)filePath;
+- (void)scanFilePath:(NSString *)filePath
+				size:(UInt64)size
+			 delFlag:(BOOL)delFlag;
 @end
 
 
