@@ -169,10 +169,12 @@
 
 
 - (NSData *)md5With:(MISFile *)file {
+	//not null
 	if (file.size == 0)
-		return nil;
+		return NSData.data;
 	
 	UInt8 MD5[CC_MD5_DIGEST_LENGTH];
+	bzero(MD5, CC_MD5_DIGEST_LENGTH);
 	CC_MD5_CTX ctx;
 	CC_MD5_Init(&ctx);
 	
