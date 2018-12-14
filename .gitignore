@@ -1,0 +1,10 @@
+#ignore system files
+.*
+!.gitignore
+build/
+send_mail.py
+
+#ignore Xcode part proj files
+
+*.xcodeproj/project.xcworkspace
+*.xcodeproj/xcuserdata
